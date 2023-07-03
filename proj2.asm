@@ -592,9 +592,9 @@ menu_principal:
 entrada_menu_principal:
 		mov AH, 00
 		int 16
-		cmp AH, 48
+		cmp AH, [control_arriba]
 		je restar_opcion_menu_principal
-		cmp AH, 50
+		cmp AH, [control_abajo]
 		je sumar_opcion_menu_principal
 		cmp AH, 3b  ;; le doy F1
 		je fin_menu_principal
@@ -652,9 +652,9 @@ fin_menu_principal:
 entrada_menu_configuracion:
 		mov AH, 00
 		int 16
-		cmp AH, 48
+		cmp AH, [control_arriba]
 		je restar_opcion_menu_configuracion
-		cmp AH, 50
+		cmp AH, [control_abajo]
 		je sumar_opcion_menu_configuracion
 		cmp AH, 3b  ;; le doy F1
 		je fin_menu_configuracion
@@ -1270,49 +1270,56 @@ pedir_nuevos_controles:
 		mov AH, 02
 		int 10
 		;; <<-- posicionar el cursor
+		push DX
 		mov DX, offset prompt_abajo
 		mov AH, 09
 		int 21
+		pop DX
 		;Espera una entrada de cleado
 		mov AH, 00
 		int 16
 		;impirmir tecla
+		push AX
 		push DX
 		add DL, 0c
 		mov BH, 00
 		mov AH, 02
 		int 10
 		pop DX
+		pop AX
+		mov [control_abajo], AH
 		push DX
 		mov DL, AL
-		; mov [control_abajo], AL
-		; ;; cambio de control
 		mov AH, 02
 		int 21
 		pop DX
+
 		; ----- ARRIBA
 		add DH, 02
 		mov BH, 00
 		mov AH, 02
 		int 10
 		;; <<-- posicionar el cursor
+		push DX
 		mov DX, offset prompt_arriba
 		mov AH, 09
 		int 21
+		pop DX
 		;Espera una entrada de cleado
 		mov AH, 00
 		int 16
 		;impirmir tecla
+		push AX
 		push DX
 		add DL, 0c
 		mov BH, 00
 		mov AH, 02
 		int 10
 		pop DX
+		pop AX
+		mov [control_arriba], AH
 		push DX
 		mov DL, AL
-		; mov [control_arriba], AH
-		; ;; cambio de control
 		mov AH, 02
 		int 21
 		pop DX
@@ -1322,23 +1329,26 @@ pedir_nuevos_controles:
 		mov AH, 02
 		int 10
 		;; <<-- posicionar el cursor
+		push DX
 		mov DX, offset prompt_derecha
 		mov AH, 09
 		int 21
+		pop DX
 		;Espera una entrada de cleado
 		mov AH, 00
 		int 16
 		;impirmir tecla
+		push AX
 		push DX
 		add DL, 0c
 		mov BH, 00
 		mov AH, 02
 		int 10
 		pop DX
+		pop AX
+		mov [control_derecha], AH
 		push DX
 		mov DL, AL
-		; mov [control_derecha], AH
-		; ;; cambio de control
 		mov AH, 02
 		int 21
 		pop DX
@@ -1348,23 +1358,26 @@ pedir_nuevos_controles:
 		mov AH, 02
 		int 10
 		;; <<-- posicionar el cursor
+		push DX
 		mov DX, offset prompt_izquierda
 		mov AH, 09
 		int 21
+		pop DX
 		;Espera una entrada de cleado
 		mov AH, 00
 		int 16
 		;impirmir tecla
+		push AX
 		push DX
-		; add DL, 0c
+		add DL, 0c
 		mov BH, 00
 		mov AH, 02
 		int 10
 		pop DX
+		pop AX
+		mov [control_izquierda], AH
 		push DX
 		mov DL, AL
-		; mov [control_izquierda], AH
-		; ;; cambio de control
 		mov AH, 02
 		int 21
 		pop DX
