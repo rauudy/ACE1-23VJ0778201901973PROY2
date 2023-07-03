@@ -78,6 +78,10 @@ configuracion db "CONFIGURACION$"
 puntajes      db "PUNTAJES ALTOS$"
 salir         db "SALIR$"
 iniciales     db "RDCC - 201901973$"
+crono     db "00:00:00$"
+ganaste    db "GANASTE, SIGUE...$"
+habia_objetivo db 0 ;;BOOLEANO PARA SABER SI HABIA UN OBJETIVO 0 falso 1 Verdadero
+hay_objetivo_mapa db 0 ;;BOOLEANO PARA SABER HAY UN OBJETIVO 0 falso 1 Verdadero
 
 
 ;; MENU CONTROLES
@@ -107,7 +111,7 @@ buffer_entrada   db  20, 00
                  db  20 dup (0)
 
 cod_name    db    21 dup (0)		
-prompt_name      db    "Direccion Nivel: ","$"		 
+prompt_name      db    "Direccion del Nivel: ","$"		 
 nueva_lin  db    0a,"$"
 ;; CONTROLES
 control_arriba    db  48
@@ -115,10 +119,11 @@ control_abajo     db  50
 control_izquierda db  4b
 control_derecha   db  4d
 ;; NIVELES
-nivel_x           db  "NIV.00",00
-nivel_0           db  "NIV.01",00
-nivel_1           db  "NIV.10",00
-nivel_2           db  "NIV.11",00
+nivel_act 		  db  0
+nivel_x           db  "NIV.11",00
+nivel_1           db  "NIV.01",00
+nivel_2           db  "NIV.10",00
+nivel_3           db  "NIV.00",00
 handle_nivel      dw  0000
 linea             db  100 dup (0)
 elemento_actual   db  0
@@ -132,12 +137,13 @@ tk_caja       db  04,"caja"
 tk_objetivo   db  08,"objetivo"
 tk_coma       db  01,","
 ;;
-numero        db  5 dup (30)
+numero        db  "00000$";;5 dup (30)
 ;;
 usuario       db "Raudy"
 clave         db "4554"
 .CODE
 .STARTUP
+
 inicio:
 		;; MODO VIDEO ;;
 		mov AH, 00
@@ -150,7 +156,8 @@ desplegar_menu_principal:
 		;; > INICIAR JUEGO
 		cmp AL, 0
 		; je ciclo_juego
-		je cargar_un_nivel
+		; je cargar_un_nivel
+		je iniciar_nivel_1
 		;; > CARGAR NIVEL
 		cmp AL, 1
 		; je cargar_un_nivel
@@ -163,15 +170,251 @@ desplegar_menu_principal:
 		cmp AL, 4
 		je fin
 		;;;;;;;;;;;;;;;;
+
+;; NIVEL1
+iniciar_nivel_1:
+	mov [nivel_act],1
+	mov DI, offset cod_name
+	mov CX, 20 ;; 32veces
+	mov AL, 0
+	call memset
+iniciar_copiar_nom_nivel_1:
+		mov SI, offset cod_name
+		mov DI, offset nivel_1
+		mov CX, 07
+copiar_nom_nivel_1:	
+		mov AL, [DI]
+		mov [SI], AL
+		inc SI
+		inc DI
+		loop copiar_nom_nivel_1
+		jmp cargar_un_nivel
+
+;; NIVEL2
+iniciar_nivel_2:
+	;resteando mapa
+	mov DI, offset mapa
+	mov CX, 3e8 ;;1000
+	mov AL, 0
+	call memset
+
+	; ;resetar objetivos habia
+	mov [habia_objetivo],0
+
+	mov [nivel_act],2
+	mov DI, offset cod_name
+	mov CX, 20 ;; 32veces
+	mov AL, 0
+	call memset
+iniciar_copiar_nom_nivel_2:
+		mov SI, offset cod_name
+		mov DI, offset nivel_2
+		mov CX, 07
+copiar_nom_nivel_2:	
+		mov AL, [DI]
+		mov [SI], AL
+		inc SI
+		inc DI
+		loop copiar_nom_nivel_2
+		jmp cargar_un_nivel
+
+;; NIVEL3
+iniciar_nivel_3:
+	;resteando mapa
+	mov DI, offset mapa
+	mov CX, 3e8 ;;1000
+	mov AL, 0
+	call memset
+
+	;;resetar objetivos habia
+	mov [habia_objetivo],0
+
+	mov [nivel_act],3
+	mov DI, offset cod_name
+	mov CX, 20 ;; 32veces
+	mov AL, 0
+	call memset
+iniciar_copiar_nom_nivel_3:
+		mov SI, offset cod_name
+		mov DI, offset nivel_3
+		mov CX, 07
+copiar_nom_nivel_3:	
+		mov AL, [DI]
+		mov [SI], AL
+		inc SI
+		inc DI
+		loop copiar_nom_nivel_3
+		jmp cargar_un_nivel
+
+
+
 ciclo_juego:
 		call pintar_mapa
 		call entrada_juego
-		jmp ciclo_juego
+
+		;;INICIALES
+		push DX
+		push AX
+		mov DL, 01
+		mov DH, 18
+		mov BH, 00 ;NUMERO DE LA PAGINA
+		mov AH, 02 ;SETEAR EL CURSOR 
+		int 10
+		pop DX
+		pop AX
+		;; <<-- posicionar el cursor
+		push DX
+		mov DX, offset iniciales
+		mov AH, 09
+		int 21
+		pop DX
+
+		;;CRONOMETRO
+		push DX
+		push AX
+		mov DL, 19
+		mov DH, 18
+		mov BH, 00 ;NUMERO DE LA PAGINA
+		mov AH, 02 ;SETEAR EL CURSOR 
+		int 10
+		pop DX
+		pop AX
+		;; <<-- posicionar el cursor
+		push DX
+		mov DX, offset crono
+		mov AH, 09
+		int 21
+		pop DX
+
+
+
+		;;imprimir el punteo
+		mov AX, [puntos]
+		call numAcadena
+		mov DI, offset numero
+
+		; jmp ciclo_juego
 		;;;;;;;;;;;;;;;;
+; ciclo_poner_dolar:
+; 		mov AL, [DI]
+; 		cmp AL, 00
+; 		je poner_dolar
+; 		inc DI
+; 		jmp ciclo_poner_dolar
+; poner_dolar:
+; 		mov AL, 24  ;; dólar para nombre
+; 		mov [DI], AL
+
+		push DX
+		push AX
+		mov DL, 22
+		mov DH, 01
+		mov BH, 00 ;NUMERO DE LA PAGINA
+		mov AH, 02 ;SETEAR EL CURSOR 
+		int 10
+		pop DX
+		pop AX
+		;; <<-- posicionar el cursor
+		push DX
+		mov DX, offset numero
+		mov AH, 09
+		int 21
+		pop DX
+
+		;;; VERIFICAR LOS OBJETIVOS QUE HAY EN EL MAPA PARA GANAR
+		call validar_objetivos_mapa
+		;;Validamos los obejtivos, si no hay se pasa al siguiente nivel
+		cmp [hay_objetivo_mapa], 0
+		je terminar_juego_act
+
+		jmp ciclo_juego
+
+terminar_juego_act:
+		call clear_pantalla
+
+		mov DL, 0c
+		mov DH, 05
+		mov BH, 00
+		mov AH, 02
+		int 10
+		;; <<-- posicionar el cursor
+		push DX
+		mov DX, offset ganaste
+		mov AH, 09
+		int 21
+		pop DX
+		;limpiar y salir a menu principal
+		call delay
+		call delay
+		call delay
+		call delay
+		
+		inc nivel_act ;; incrementa el valor del nivel
+		cmp [nivel_act],2
+		je iniciar_nivel_2
+		cmp [nivel_act],3
+		je iniciar_nivel_3
+
+		jmp resetear_valores_juego
+
+validar_objetivos_mapa:
+		mov DI, offset mapa
+		mov CX, 3e8
+ciclo_validar_objetivos:
+		mov AL, [DI]
+		cmp AL, OBJETIVO
+		je validar_fin_objetivos_hay
+		inc DI
+		loop ciclo_validar_objetivos
+		jmp validar_fin_objetivos_nohay
+		ret
+validar_fin_objetivos_hay:
+		mov [hay_objetivo_mapa], 1
+		ret
+validar_fin_objetivos_nohay:
+		mov [hay_objetivo_mapa], 0
+		ret
+
+numAcadena:
+		mov CX, 0005
+		mov DI, offset numero
+ciclo_poner30s:
+		mov BL, 30
+		mov [DI], BL
+		inc DI
+		loop ciclo_poner30s
+		;; tenemos '0' en toda la cadena
+		mov CX, AX    ; inicializar contador
+		mov DI, offset numero
+		add DI, 0004
+		;;
+ciclo_convertirAcadena:
+		mov BL, [DI]
+		inc BL
+		mov [DI], BL
+		cmp BL, 3a
+		je aumentar_siguiente_digito_primera_vez
+		loop ciclo_convertirAcadena
+		jmp retorno_convertirAcadena
+aumentar_siguiente_digito_primera_vez:
+		push DI
+aumentar_siguiente_digito:
+		mov BL, 30     ; poner en '0' el actual
+		mov [DI], BL
+		dec DI         ; puntero a la cadena
+		mov BL, [DI]
+		inc BL
+		mov [DI], BL
+		cmp BL, 3a
+		je aumentar_siguiente_digito
+		pop DI         ; se recupera DI
+		loop ciclo_convertirAcadena
+retorno_convertirAcadena:
+		ret
 
 pedir_de_nuevo_nombre:
 		call clear_pantalla
-		mov DL, 0c
+		mov DL, 05
 		mov DH, 05
 		mov BH, 00
 		mov AH, 02
@@ -387,6 +630,8 @@ fin_parseo:
 		mov AH, 3e
 		mov BX, [handle_nivel]
 		int 21
+
+		mov puntos, 0
 		;;
 		jmp ciclo_juego
 		jmp fin
@@ -1018,7 +1263,6 @@ obtener_de_mapa:
 		mov DL, [DI]
 		ret
 
-
 ;; pintar_mapa - pinta los elementos del mapa
 ;; ENTRADA:
 ;; SALIDA:
@@ -1431,18 +1675,28 @@ entrada_juego:
 		; je menu_pausa
 		je entrar_menu_pausa
 		ret
+
 mover_jugador_arr:
+		;;obtiene acutal jugador
 		mov AH, [xJugador]
 		mov AL, [yJugador]
-		dec AL
+		dec AL ;; para ver arriba en y
 		push AX
-		call obtener_de_mapa   ; obtiene el objeto en cierta coordenada del mapa
+		call obtener_de_mapa
 		pop AX
 		;; DL <- elemento en mapa
-		cmp DL, PARED
+		cmp DL, PARED ;;COMPARAR SI HAY PARED ARRIBA
 		je hay_pared_arriba
-		mov [yJugador], AL
+
+		cmp DL, CAJA ;;COMPARAR SI HAY CAJA ARRIBA
+		je hay_caja_arriba
 		;;
+
+		cmp DL, OBJETIVO
+		je hay_objetivo_arriba
+
+		mov [yJugador], AL
+
 		mov DL, JUGADOR
 		push AX
 		call colocar_en_mapa
@@ -1450,10 +1704,87 @@ mover_jugador_arr:
 		;;
 		mov DL, SUELO
 		inc AL
+		push AX
 		call colocar_en_mapa
+		pop AX
+
+		cmp [habia_objetivo], 1
+		je poner_objetivo_anterior
+
+		;;incrementar puntos
+		inc puntos
 		ret
 hay_pared_arriba:
 		ret
+hay_objetivo_arriba:
+		call hay_objetivo
+
+		mov [yJugador], AL
+
+		mov DL, JUGADOR
+		push AX
+		call colocar_en_mapa
+		pop AX
+		;;
+		mov DL, SUELO
+		inc AL
+		push AX
+		call colocar_en_mapa
+		pop AX
+		;;incrementar puntos
+		inc puntos
+		ret
+
+;PARA TODOS vvv
+poner_objetivo_anterior:
+		mov DL, OBJETIVO
+		push AX
+		call colocar_en_mapa
+		pop AX
+
+		mov [habia_objetivo], 0
+		inc puntos
+		ret
+hay_objetivo:
+		mov [habia_objetivo], 1
+		ret
+;-------------------
+hay_caja_arriba:
+	dec AL
+	push AX
+	call obtener_de_mapa
+	pop AX
+	inc AL
+
+	cmp DL, PARED
+	je hay_pared_arriba
+
+	cmp DL, CAJA
+	je hay_pared_arriba
+
+	;;; como se puede mover cambia
+	mov [yJugador], AL
+	;;
+	mov DL, JUGADOR
+	push AX
+	call colocar_en_mapa
+	pop AX
+	;;
+	mov DL, SUELO
+	inc AL
+	push AX
+	call colocar_en_mapa
+	pop AX
+	;; mover caja
+	mov DL, CAJA
+	sub AL, 02
+	push AX
+	call colocar_en_mapa
+	pop AX
+	;;
+	;;incrementar puntos
+	inc puntos
+	ret
 mover_jugador_aba:
 		mov AH, [xJugador]
 		mov AL, [yJugador]
@@ -1464,6 +1795,15 @@ mover_jugador_aba:
 		;; DL <- elemento en mapa
 		cmp DL, PARED
 		je hay_pared_abajo
+
+		;;; como se puede mover cambia y
+		;;
+		cmp DL, CAJA
+		je hay_caja_abajo
+		
+		cmp DL, OBJETIVO
+		je hay_objetivo_abajo
+
 		mov [yJugador], AL
 		;;
 		mov DL, JUGADOR
@@ -1473,10 +1813,71 @@ mover_jugador_aba:
 		;;
 		mov DL, SUELO
 		dec AL
+		push AX
 		call colocar_en_mapa
+		pop AX
+
+		cmp [habia_objetivo], 1
+		je poner_objetivo_anterior
+
+		;;incrementar puntos
+		inc puntos
 		ret
 hay_pared_abajo:
 		ret
+hay_objetivo_abajo:
+		call hay_objetivo
+		mov [yJugador], AL
+		;;
+		mov DL, JUGADOR
+		push AX
+		call colocar_en_mapa
+		pop AX
+		;;
+		mov DL, SUELO
+		dec AL
+		push AX
+		call colocar_en_mapa
+		pop AX
+		;;incrementar puntos
+		inc puntos
+		ret
+hay_caja_abajo:
+	inc AL
+	push AX
+	call obtener_de_mapa
+	pop AX
+	dec AL
+	
+	cmp DL, PARED
+	je hay_pared_abajo
+	cmp DL, CAJA
+	je hay_pared_abajo
+
+	;;; como se puede mover cambia
+	mov [yJugador], AL
+	;;
+	mov DL, JUGADOR
+	push AX
+	call colocar_en_mapa
+	pop AX
+	;;
+	mov DL, SUELO
+	dec AL
+	push AX
+	call colocar_en_mapa
+	pop AX
+	;; mover caja
+	mov DL, CAJA
+	add AL, 02
+	push AX
+	call colocar_en_mapa
+	pop AX
+	;;
+	;;incrementar puntos
+	inc puntos
+	ret
+
 mover_jugador_izq:
 		mov AH, [xJugador]
 		mov AL, [yJugador]
@@ -1487,8 +1888,15 @@ mover_jugador_izq:
 		;; DL <- elemento en mapa
 		cmp DL, PARED
 		je hay_pared_izquierda
-		mov [xJugador], AH
+
+		cmp DL, CAJA
+		je hay_caja_izquierda
+
+		cmp DL, OBJETIVO
+		je hay_objetivo_izquierda
 		;;
+		mov [xJugador], AH
+
 		mov DL, JUGADOR
 		push AX
 		call colocar_en_mapa
@@ -1496,10 +1904,71 @@ mover_jugador_izq:
 		;;
 		mov DL, SUELO
 		inc AH
+		push AX
 		call colocar_en_mapa
+		pop AX
+
+		cmp [habia_objetivo], 1
+		je poner_objetivo_anterior
+
+		;;incrementar puntos
+		inc puntos
 		ret
 hay_pared_izquierda:
 		ret
+hay_objetivo_izquierda:
+		call hay_objetivo
+		mov [xJugador], AH
+
+		mov DL, JUGADOR
+		push AX
+		call colocar_en_mapa
+		pop AX
+		;;
+		mov DL, SUELO
+		inc AH
+		push AX
+		call colocar_en_mapa
+		pop AX
+
+		;;incrementar puntos
+		inc puntos
+		ret
+hay_caja_izquierda:
+	dec AH
+	push AX
+	call obtener_de_mapa
+	pop AX
+	inc AH
+
+	cmp DL, PARED
+	je hay_pared_izquierda
+	cmp DL, CAJA
+	je hay_pared_izquierda
+
+	mov [xJugador], AH
+	;;
+	mov DL, JUGADOR
+	push AX
+	call colocar_en_mapa
+	pop AX
+	;;
+	mov DL, SUELO
+	inc AH
+	push AX
+	call colocar_en_mapa
+	pop AX
+	;; mover caja
+	mov DL, CAJA
+	sub AH, 02
+	push AX
+	call colocar_en_mapa
+	pop AX
+	;;
+	;;incrementar puntos
+	inc puntos
+	ret
+
 mover_jugador_der:
 		mov AH, [xJugador]
 		mov AL, [yJugador]
@@ -1510,6 +1979,13 @@ mover_jugador_der:
 		;; DL <- elemento en mapa
 		cmp DL, PARED
 		je hay_pared_derecha
+		;;
+		cmp DL, CAJA
+		je hay_caja_derecha
+		
+		cmp DL, OBJETIVO
+		je hay_objetivo_derecha
+
 		mov [xJugador], AH
 		;;
 		mov DL, JUGADOR
@@ -1519,10 +1995,72 @@ mover_jugador_der:
 		;;
 		mov DL, SUELO
 		dec AH
+		push AX
 		call colocar_en_mapa
+		pop AX
+
+		cmp [habia_objetivo], 1
+		je poner_objetivo_anterior
+
+		;;incrementar puntos
+		inc puntos
 		ret
 hay_pared_derecha:
 		ret
+hay_objetivo_derecha:
+		call hay_objetivo
+		mov [xJugador], AH
+		;;
+		mov DL, JUGADOR
+		push AX
+		call colocar_en_mapa
+		pop AX
+		;;
+		mov DL, SUELO
+		dec AH
+		push AX
+		call colocar_en_mapa
+		pop AX
+
+		;;incrementar puntos
+		inc puntos
+		ret
+hay_caja_derecha:
+	inc AH
+	push AX
+	call obtener_de_mapa
+	pop AX
+	dec AH
+
+	cmp DL, PARED
+	je hay_pared_derecha
+	cmp DL, CAJA
+	je hay_pared_derecha
+
+	mov [xJugador], AH
+	;;
+	mov DL, JUGADOR
+	push AX
+	call colocar_en_mapa
+	pop AX
+	;;
+	mov DL, SUELO
+	dec AH
+	push AX
+	call colocar_en_mapa
+	pop AX
+	;; mover caja
+	mov DL, CAJA
+	add AH, 02
+	push AX
+	call colocar_en_mapa
+	pop AX
+	;;
+	;;incrementar puntos
+	inc puntos
+	ret
+
+
 fin_entrada_juego:
 		ret
 
